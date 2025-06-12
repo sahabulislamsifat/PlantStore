@@ -3,8 +3,8 @@ import { TbFidgetSpinner } from "react-icons/tb";
 /* eslint-disable react/prop-types */
 const AddPlantForm = ({
   handleSubmit,
-  uploadButtonText,
-  setUploadButtonText,
+  uploadImageInfo,
+  setUploadImageInfo,
   loading,
 }) => {
   return (
@@ -95,7 +95,12 @@ const AddPlantForm = ({
                 <div className="flex flex-col w-max mx-auto text-center">
                   <label>
                     <input
-                      onChange={(e) => setUploadButtonText(e.target.files[0])}
+                      onChange={(e) =>
+                        setUploadImageInfo({
+                          image: e.target.files[0],
+                          url: URL.createObjectURL(e.target.files[0]),
+                        })
+                      }
                       className="text-sm cursor-pointer w-36 hidden"
                       type="file"
                       name="image"
@@ -104,16 +109,23 @@ const AddPlantForm = ({
                       hidden
                     />
                     <div className="bg-lime-500 text-white border border-gray-300 rounded font-semibold cursor-pointer p-1 px-3 hover:bg-lime-500">
-                      {uploadButtonText.name}
+                      {uploadImageInfo?.image?.name}
                     </div>
                   </label>
                 </div>
               </div>
             </div>
-            {uploadButtonText.size && (
-              <p className="text-sm text-gray-600">
-                Selected Image: {uploadButtonText.size} Bytes
-              </p>
+            {uploadImageInfo && uploadImageInfo?.image?.size && (
+              <div className="flex items-center">
+                <img
+                  className="w-20 object-cover ml-5"
+                  src={uploadImageInfo?.url}
+                  alt=""
+                />
+                <p className="text-sm ml-5 text-gray-600">
+                  Selected Image: {uploadImageInfo?.image?.size} Bytes
+                </p>
+              </div>
             )}
             {/* Submit Button */}
             <button
@@ -123,7 +135,7 @@ const AddPlantForm = ({
               {loading ? (
                 <TbFidgetSpinner className="animate-spin m-auto" />
               ) : (
-                "Continue"
+                "Save & Continue"
               )}
             </button>
           </div>
