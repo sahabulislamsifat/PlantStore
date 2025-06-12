@@ -28,15 +28,13 @@ const Navbar = () => {
                   className="p-4 md:py-1 md:px-2 border-[1px] border-neutral-200 flex flex-row items-center gap-3 rounded cursor-pointer hover:shadow-md transition"
                 >
                   <AiOutlineMenu />
-                  <div className="hidden md:block">
+                  <div className="hidden h-7 md:block">
                     {/* Avatar */}
                     <img
-                      className="rounded-full"
+                      className="rounded-full h-[29px] w-[29px] object-cover"
                       referrerPolicy="no-referrer"
                       src={user && user.photoURL ? user.photoURL : avatarImg}
                       alt="profile"
-                      height="30"
-                      width="30"
                     />
                   </div>
                 </div>

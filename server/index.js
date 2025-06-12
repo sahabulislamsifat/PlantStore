@@ -2,7 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const { MongoClient, ServerApiVersion } = require("mongodb");
 const jwt = require("jsonwebtoken");
 const morgan = require("morgan");
 
@@ -35,7 +35,7 @@ const verifyToken = async (req, res, next) => {
     next();
   });
 };
-const uri = `mongodb+srv://${process.env.USER_DB}:${process.env.DB_PASS}@cluster0.vu9lo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.vu9lo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -47,6 +47,28 @@ const client = new MongoClient(uri, {
 });
 async function run() {
   try {
+    const database = client.db("plant-store");
+    const userCollection = database.collection("users");
+    const plantCollection = database.collection("plants");
+
+    //* Save or Update User to the database
+    app.post("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const user = req.body;
+      // check if user exists in db
+      const isExistingUser = await userCollection.findOne(query);
+      if (isExistingUser) {
+        return res.send(isExistingUser);
+      }
+      const result = await userCollection.insertOne({
+        ...user,
+        role: "customer", // default role
+        createdAt: new Date(),
+      });
+      res.send(result);
+    });
+
     // Generate jwt token
     app.post("/jwt", async (req, res) => {
       const email = req.body;
@@ -76,6 +98,19 @@ async function run() {
       }
     });
 
+    // save a new plant
+    app.post("/plant", verifyToken, async (req, res) => {
+      const plant = req.body;
+      const result = await plantCollection.insertOne(plant);
+      res.send(result);
+    });
+
+    // get all plants
+    app.get("/plants", async (req, res) => {
+      const cursor = plantCollection.find({});
+      const plants = await cursor.toArray();
+      res.send(plants);
+    });
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
