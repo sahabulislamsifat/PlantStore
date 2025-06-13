@@ -50,6 +50,7 @@ async function run() {
     const database = client.db("plant-store");
     const userCollection = database.collection("users");
     const plantCollection = database.collection("plants");
+    const orderCollection = database.collection("orders");
 
     //* Save or Update User to the database
     app.post("/user/:email", async (req, res) => {
@@ -118,6 +119,66 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       const plant = await plantCollection.findOne(query);
       res.send(plant);
+    });
+
+    // save order data in the database
+    app.post("/order", verifyToken, async (req, res) => {
+      const order = req.body;
+      const result = await orderCollection.insertOne(order);
+      res.send(result);
+    });
+
+    // manage plants quantity after purchase
+    app.patch("/plant/quantity/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const { quantityToUpdate } = req.body;
+      const query = { _id: new ObjectId(id) };
+      let updateDoc = {
+        $inc: { quantity: -quantityToUpdate },
+      };
+      const result = await plantCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
+
+    // get all orders of a specific customer
+    app.get("/customer-orders/:email", verifyToken, async (req, res) => {
+      const email = req.params.email;
+      const query = { "customer.email": email };
+      const cursor = orderCollection.aggregate([
+        { $match: query },
+        {
+          $addFields: {
+            plantId: {
+              $toObjectId: "$plantId",
+            },
+          },
+        },
+        {
+          $lookup: {
+            from: "plants",
+            localField: "plantId",
+            foreignField: "_id",
+            as: "plantDetails",
+          },
+        },
+        {
+          $unwind: "$plantDetails",
+        },
+        {
+          $addFields: {
+            name: "$plantDetails.name",
+            category: "$plantDetails.category",
+            image: "$plantDetails.image",
+          },
+        },
+        {
+          $project: {
+            plantDetails: 0,
+          },
+        },
+      ]);
+      const orders = await cursor.toArray();
+      res.send(orders);
     });
 
     // Send a ping to confirm a successful connection

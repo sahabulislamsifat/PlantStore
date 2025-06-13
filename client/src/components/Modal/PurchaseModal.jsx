@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import {
   Dialog,
   Transition,
@@ -6,61 +5,71 @@ import {
   DialogPanel,
   DialogTitle,
 } from "@headlessui/react";
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import Button from "../Shared/Button/Button";
-import { useState } from "react";
 import useAuth from "../../hooks/useAuth";
 import toast from "react-hot-toast";
+import useAxiosSecure from "../../hooks/useAxiosSecure";
+import PropTypes from "prop-types";
 
-const PurchaseModal = ({ closeModal, isOpen, plant }) => {
+const PurchaseModal = ({ closeModal, isOpen, plant, refetch }) => {
+  const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
+
   const { name, category, price, quantity, _id, seller } = plant;
+
   const [totalQuantity, setTotalQuantity] = useState(1);
   const [totalPrice, setTotalPrice] = useState(price);
-  const [purchaseInfo, setPurchaseInfo] = useState({
-    customer: {
-      name: user?.displayName || "Guest",
-      email: user?.email,
-      photoURL: user?.photoURL || "https://via.placeholder.com/150",
-    },
-    plantId: _id,
-    name: name,
-    quantity: totalQuantity,
-    price: totalPrice,
-    seller: seller?.email,
-    address: "",
-    status: "pending",
-  });
+  const [address, setAddress] = useState("");
 
+  // Quantity Change Handler
   const handleQuantityChange = (value) => {
-    if (value > quantity) {
+    const intValue = parseInt(value, 10);
+    if (intValue > quantity) {
       setTotalQuantity(quantity);
       return toast.error(
-        `You cannot select more than available quantity (${quantity}). Please select a valid quantity.`
+        `You cannot select more than available quantity (${quantity}).`
       );
     }
-    if (value <= 0) {
+    if (intValue <= 0 || isNaN(intValue)) {
       setTotalQuantity(1);
-      return toast.error(
-        "Quantity cannot be less than 1. Please select a valid quantity."
-      );
+      return toast.error("Quantity cannot be less than 1.");
     }
-    setTotalQuantity(value);
-    setTotalPrice(value * price);
-    toast.success(`You have selected ${value} items.`);
 
-    setPurchaseInfo(prev)=> {
-      return {
-        ...prev,
-        quantity: value,
-        price: value * price,
-    }
+    setTotalQuantity(intValue);
+    setTotalPrice(intValue * price);
+    toast.success(`You have selected ${intValue} items.`);
   };
-  // console.log(totalQuantity);
 
-  // Total Price Calculation
-  const handlePurchase = () => {
-    console.table("Purchase Info:", purchaseInfo);
+  // Purchase Handler
+  const handlePurchase = async () => {
+    const orderData = {
+      customer: {
+        name: user?.displayName,
+        email: user?.email,
+        photoURL: user?.photoURL,
+      },
+      plantId: _id,
+      name: name,
+      quantity: totalQuantity,
+      price: totalPrice,
+      seller: seller?.email,
+      address: address,
+      status: "pending",
+    };
+
+    try {
+      await axiosSecure.post("/order", orderData);
+      await axiosSecure.patch(`/plant/quantity/${_id}`, {
+        quantityToUpdate: totalQuantity,
+      });
+      refetch();
+      toast.success("Purchase Successful!");
+    } catch (error) {
+      console.error("Purchase failed:", error);
+    } finally {
+      closeModal();
+    }
   };
 
   return (
@@ -96,6 +105,7 @@ const PurchaseModal = ({ closeModal, isOpen, plant }) => {
                 >
                   Review Info Before Purchase
                 </DialogTitle>
+
                 <div className="mt-2">
                   <p className="text-sm text-gray-500">Plant: {name}</p>
                 </div>
@@ -107,7 +117,6 @@ const PurchaseModal = ({ closeModal, isOpen, plant }) => {
                     Customer: {user?.displayName}
                   </p>
                 </div>
-
                 <div className="mt-2">
                   <p className="text-sm text-gray-500">Price: $ {price}</p>
                 </div>
@@ -117,7 +126,7 @@ const PurchaseModal = ({ closeModal, isOpen, plant }) => {
                   </p>
                 </div>
 
-                {/* Available Quantity Input Field */}
+                {/* Quantity Input */}
                 <div className="space-y-1 items-center text-sm flex mt-1 gap-2">
                   <label htmlFor="quantity" className="block text-gray-600">
                     Quantity
@@ -133,18 +142,14 @@ const PurchaseModal = ({ closeModal, isOpen, plant }) => {
                     required
                   />
                 </div>
-                {/* Shipment address Input Field */}
+
+                {/* Address Input */}
                 <div className="space-y-1 items-center text-sm flex mt-1 gap-2">
-                  <label htmlFor="quantity" className="block text-gray-600">
+                  <label htmlFor="address" className="block text-gray-600">
                     Address:
                   </label>
                   <input
-                    onChange={(e) =>
-                      setPurchaseInfo({
-                        ...purchaseInfo,
-                        address: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setAddress(e.target.value)}
                     className="w-56 px-2 py-1 text-gray-800 border border-lime-300 focus:outline-lime-500 rounded bg-white"
                     name="shipment"
                     id="address"
@@ -153,7 +158,8 @@ const PurchaseModal = ({ closeModal, isOpen, plant }) => {
                     required
                   />
                 </div>
-                {/* Purchase Button  */}
+
+                {/* Purchase Button */}
                 <div className="mt-4 flex justify-center">
                   <Button
                     onClick={handlePurchase}
@@ -167,6 +173,13 @@ const PurchaseModal = ({ closeModal, isOpen, plant }) => {
       </Dialog>
     </Transition>
   );
+};
+
+PurchaseModal.propTypes = {
+  closeModal: PropTypes.func.isRequired,
+  isOpen: PropTypes.bool.isRequired,
+  plant: PropTypes.object.isRequired,
+  refetch: PropTypes.func.isRequired,
 };
 
 export default PurchaseModal;
