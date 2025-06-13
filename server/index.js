@@ -131,11 +131,16 @@ async function run() {
     // manage plants quantity after purchase
     app.patch("/plant/quantity/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
-      const { quantityToUpdate } = req.body;
+      const { quantityToUpdate, status } = req.body;
       const query = { _id: new ObjectId(id) };
       let updateDoc = {
         $inc: { quantity: -quantityToUpdate },
       };
+      if (status === "increase") {
+        updateDoc = {
+          $inc: { quantity: quantityToUpdate },
+        };
+      }
       const result = await plantCollection.updateOne(query, updateDoc);
       res.send(result);
     });
@@ -179,6 +184,19 @@ async function run() {
       ]);
       const orders = await cursor.toArray();
       res.send(orders);
+    });
+
+    // cancel or delete an order
+    app.delete("/order/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const order = await orderCollection.findOne(query);
+      if (order.status === "delivered")
+        return res
+          .status(409)
+          .send("cannot cancel once the product is delivered");
+      const result = await orderCollection.deleteOne(query);
+      res.send(result);
     });
 
     // Send a ping to confirm a successful connection

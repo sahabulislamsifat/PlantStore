@@ -9,7 +9,11 @@ const MyOrders = () => {
   const { user } = useAuth();
   const axiosSecure = useAxiosSecure();
 
-  const { data: orders = {}, isLoading } = useQuery({
+  const {
+    data: orders = {},
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["orders", user?.email],
     queryFn: async () => {
       const { data } = await axiosSecure(`/customer-orders/${user?.email}`);
@@ -78,7 +82,11 @@ const MyOrders = () => {
                 </thead>
                 <tbody>
                   {orders.map((order) => (
-                    <CustomerOrderDataRow key={order._id} order={order} />
+                    <CustomerOrderDataRow
+                      key={order._id}
+                      refetch={refetch}
+                      order={order}
+                    />
                   ))}
                 </tbody>
               </table>
