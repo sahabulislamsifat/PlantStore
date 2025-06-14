@@ -13,3 +13,15 @@ export const uploadImage = async (imageData) => {
 
   return response.data.data.url;
 };
+
+export const saveUser = async (user) => {
+  await axios.post(
+    `${import.meta.env.VITE_API_URL}/user/${user?.email}`,
+    {
+      name: user?.displayName,
+      email: user?.email,
+      photoURL: user?.photoURL,
+    }
+    // { withCredentials: true }
+  );
+};

@@ -3,7 +3,7 @@ import { FcGoogle } from "react-icons/fc";
 import useAuth from "../../hooks/useAuth";
 import { toast } from "react-hot-toast";
 import { TbFidgetSpinner } from "react-icons/tb";
-import { uploadImage } from "../../api/utils/utils";
+import { saveUser, uploadImage } from "../../api/utils/utils";
 
 const SignUp = () => {
   const { createUser, updateUserProfile, signInWithGoogle, loading } =
@@ -26,11 +26,13 @@ const SignUp = () => {
     // 2. create user
     try {
       // User Registration
-      await createUser(email, password);
+      const result = await createUser(email, password);
       navigate("/");
       toast.success("Signup Successful");
       // 3. update user profile
       await updateUserProfile(name, photoURL);
+      // save user info in db is the user is new
+      await saveUser({ ...result?.user, displayName: name, photoURL });
     } catch (err) {
       console.log(err);
       toast.error(err?.message);
@@ -41,8 +43,9 @@ const SignUp = () => {
   const handleGoogleSignIn = async () => {
     try {
       //User Registration using google
-      await signInWithGoogle();
-
+      const data = await signInWithGoogle();
+      // save user data if user is new in db
+      await saveUser(data?.user);
       navigate("/");
       toast.success("Signup Successful");
     } catch (err) {

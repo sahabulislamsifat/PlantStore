@@ -56,17 +56,6 @@ const AuthProvider = ({ children }) => {
       if (currentUser?.email) {
         setUser(currentUser);
 
-        // Save user info to the database
-        await axios.post(
-          `${import.meta.env.VITE_API_URL}/user/${currentUser?.email}`,
-          {
-            name: currentUser?.displayName,
-            email: currentUser?.email,
-            photoURL: currentUser?.photoURL,
-          }
-          // { withCredentials: true }
-        );
-
         // Get JWT token
         await axios.post(
           `${import.meta.env.VITE_API_URL}/jwt`,
@@ -86,7 +75,7 @@ const AuthProvider = ({ children }) => {
     return () => {
       return unsubscribe();
     };
-  }, []);
+  }, [user]);
 
   const authInfo = {
     user,
