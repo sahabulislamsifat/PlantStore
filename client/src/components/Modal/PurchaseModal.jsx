@@ -57,7 +57,7 @@ const PurchaseModal = ({ closeModal, isOpen, plant, refetch }) => {
       price: totalPrice,
       seller: seller?.email,
       address: address,
-      status: "pending",
+      status: "Pending",
     };
 
     try {

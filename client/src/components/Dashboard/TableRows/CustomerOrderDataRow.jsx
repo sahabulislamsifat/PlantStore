@@ -25,7 +25,8 @@ const CustomerOrderDataRow = ({ order, refetch }) => {
       });
       refetch();
     } catch (error) {
-      console.error("Error deleting order:", error);
+      // console.log(error);
+      toast.error(error.response.data);
     } finally {
       closeModal();
     }

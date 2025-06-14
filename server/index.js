@@ -64,7 +64,7 @@ async function run() {
       }
       const result = await userCollection.insertOne({
         ...user,
-        role: "customer", // default role
+        role: "Customer", // default role
         createdAt: new Date(),
       });
       res.send(result);
@@ -191,12 +191,38 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const order = await orderCollection.findOne(query);
-      if (order.status === "delivered")
+      if (order.status === "Delivered")
         return res
           .status(409)
           .send("cannot cancel once the product is delivered");
       const result = await orderCollection.deleteOne(query);
       res.send(result);
+    });
+
+    // manage user status and role
+    app.patch("/user/:email", verifyToken, async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const user = await userCollection.findOne(query);
+      if (!user || user?.status === "Requested") {
+        return res
+          .status(400)
+          .send("You have already requested, wait for sometime! 👊");
+      }
+      const updateDoc = {
+        $set: {
+          status: "Requested",
+        },
+      };
+      const result = await userCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
+
+    // get all users by role
+    app.get("/users/role/:email", async (req, res) => {
+      const email = req.params.email;
+      const result = await userCollection.findOne({ email });
+      res.send({ role: result?.role });
     });
 
     // Send a ping to confirm a successful connection
