@@ -55,7 +55,6 @@ const AuthProvider = ({ children }) => {
       // console.log("CurrentUser-->", currentUser?.email);
       if (currentUser?.email) {
         setUser(currentUser);
-
         // Get JWT token
         await axios.post(
           `${import.meta.env.VITE_API_URL}/jwt`,

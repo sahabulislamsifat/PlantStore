@@ -21,8 +21,10 @@ const useAxiosSecure = () => {
         if (error.response.status === 401 || error.response.status === 403) {
           // logout
           logOut();
+
           // navigate to login
           navigate("/login");
+          console.log("Hello From Axios Secure");
         }
         return Promise.reject(error);
       }
