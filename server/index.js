@@ -70,6 +70,26 @@ async function run() {
       res.send(result);
     });
 
+    // get all users to manage users
+    app.get("/all-users/:email", verifyToken, async (req, res) => {
+      const email = req.params.email;
+      const query = { email: { $ne: email } };
+      const result = await userCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // update a user role and status
+    app.patch("/user/role/:email", verifyToken, async (req, res) => {
+      const email = req.params.email;
+      const { role, status } = req.body;
+      const filter = { email };
+      const updateDoc = {
+        $set: { role, status },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
     // Generate jwt token
     app.post("/jwt", async (req, res) => {
       const email = req.body;
