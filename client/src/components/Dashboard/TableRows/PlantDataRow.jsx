@@ -5,7 +5,7 @@ import PropTypes from "prop-types";
 import toast from "react-hot-toast";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 
-const PlantDataRow = ({ plant, refetch }) => {
+const PlantDataRow = ({ plant, refetch, isLoading }) => {
   const axiosSecure = useAxiosSecure();
   let [isOpen, setIsOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -91,6 +91,9 @@ const PlantDataRow = ({ plant, refetch }) => {
         <UpdatePlantModal
           isOpen={isEditModalOpen}
           setIsEditModalOpen={setIsEditModalOpen}
+          plant={plant}
+          refetch={refetch}
+          isLoading={isLoading}
         />
       </td>
     </tr>
@@ -102,4 +105,5 @@ export default PlantDataRow;
 PlantDataRow.propTypes = {
   plant: PropTypes.object.isRequired,
   refetch: PropTypes.func,
+  isLoading: PropTypes.bool,
 };

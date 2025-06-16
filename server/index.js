@@ -176,6 +176,18 @@ async function run() {
       res.send(result);
     });
 
+    // update plant info
+    app.put("/plants/:id", verifyToken, verifySeller, async (req, res) => {
+      const id = req.params.id;
+      const updateData = req.body;
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: updateData,
+      };
+      const result = await plantCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
+
     // delete inventory plant to specific sellers
     app.delete("/plants/:id", verifyToken, verifySeller, async (req, res) => {
       const id = req.params.id;

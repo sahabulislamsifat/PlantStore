@@ -87,6 +87,7 @@ const MyInventory = () => {
                       key={plant._id}
                       plant={plant}
                       refetch={refetch}
+                      isLoading={isLoading}
                     />
                   ))}
                 </tbody>
