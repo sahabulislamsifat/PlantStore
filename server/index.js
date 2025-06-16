@@ -203,6 +203,50 @@ async function run() {
       res.send(plant);
     });
 
+    // get all orders of a specific seller
+    app.get(
+      "/seller-orders/:email",
+      verifyToken,
+      verifySeller,
+      async (req, res) => {
+        const email = req.params.email;
+        const query = { seller: email };
+        const cursor = orderCollection.aggregate([
+          { $match: query },
+          {
+            $addFields: {
+              plantId: {
+                $toObjectId: "$plantId",
+              },
+            },
+          },
+          {
+            $lookup: {
+              from: "plants",
+              localField: "plantId",
+              foreignField: "_id",
+              as: "plantDetails",
+            },
+          },
+          {
+            $unwind: "$plantDetails",
+          },
+          {
+            $addFields: {
+              name: "$plantDetails.name",
+            },
+          },
+          {
+            $project: {
+              plantDetails: 0,
+            },
+          },
+        ]);
+        const orders = await cursor.toArray();
+        res.send(orders);
+      }
+    );
+
     // save order data in the database
     app.post("/order", verifyToken, async (req, res) => {
       const order = req.body;
