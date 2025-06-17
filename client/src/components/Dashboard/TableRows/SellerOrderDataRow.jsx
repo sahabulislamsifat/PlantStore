@@ -33,7 +33,15 @@ const SellerOrderDataRow = ({ orderData, refetch }) => {
 
   // handle status change
   const handleStatusChange = async (newStatus) => {
-    console.log(newStatus);
+    if (status === newStatus) return;
+    try {
+      // update order status
+      await axiosSecure.patch(`/orders/${_id}`, { status: newStatus });
+      refetch();
+      toast.success("Status Updated!");
+    } catch (error) {
+      toast.error(error.response.data);
+    }
   };
 
   return (
@@ -62,6 +70,7 @@ const SellerOrderDataRow = ({ orderData, refetch }) => {
           <select
             onChange={(e) => handleStatusChange(e.target.value)}
             defaultValue={status}
+            disabled={status === "Delivered"}
             required
             className="p-1 border-2 border-lime-300 focus:outline-lime-500 rounded-md text-gray-900 whitespace-no-wrap bg-white"
             name="category"

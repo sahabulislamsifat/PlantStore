@@ -1,4 +1,5 @@
 import { TbFidgetSpinner } from "react-icons/tb";
+import { shortImageName } from "../../utilities";
 
 /* eslint-disable react/prop-types */
 const AddPlantForm = ({
@@ -109,7 +110,8 @@ const AddPlantForm = ({
                       hidden
                     />
                     <div className="bg-lime-500 text-white border border-gray-300 rounded font-semibold cursor-pointer p-1 px-3 hover:bg-lime-500">
-                      {uploadImageInfo?.image?.name}
+                      {/* {uploadImageInfo?.image?.name} */}
+                      {shortImageName(uploadImageInfo?.image)}
                     </div>
                   </label>
                 </div>

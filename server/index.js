@@ -5,6 +5,7 @@ const cookieParser = require("cookie-parser");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
 const morgan = require("morgan");
+const nodemailer = require("nodemailer");
 
 const port = process.env.PORT || 9000;
 const app = express();
@@ -35,6 +36,44 @@ const verifyToken = async (req, res, next) => {
     next();
   });
 };
+
+// Send email using nodemailer
+const sendEmail = (emailAddress, emailDate) => {
+  // Create a test account or replace with real credentials.
+  const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false, // true for 465, false for other ports
+    auth: {
+      user: process.env.NODEMAILER_USER,
+      pass: process.env.NODEMAILER_PASS,
+    },
+  });
+  // verify connection
+  transporter.verify((error, success) => {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log("Transporter is ready to send email", success);
+    }
+  });
+  const emailBody = {
+    from: process.env.NODEMAILER_USER,
+    to: emailAddress,
+    subject: emailDate?.subject,
+    html: `<p>${emailDate?.message}</p>`, // HTML body
+  };
+  //send email
+  transporter.sendMail(emailBody, (error, info) => {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log(info);
+      console.log("Email sent :" + info);
+    }
+  });
+};
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.vu9lo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -113,16 +152,21 @@ async function run() {
     });
 
     // update a user role and status
-    app.patch("/user/role/:email", verifyToken, async (req, res) => {
-      const email = req.params.email;
-      const { role } = req.body;
-      const filter = { email };
-      const updateDoc = {
-        $set: { role, status: "Verified" },
-      };
-      const result = await userCollection.updateOne(filter, updateDoc);
-      res.send(result);
-    });
+    app.patch(
+      "/user/role/:email",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const email = req.params.email;
+        const { role } = req.body;
+        const filter = { email };
+        const updateDoc = {
+          $set: { role, status: "Verified" },
+        };
+        const result = await userCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      }
+    );
 
     // Generate jwt token
     app.post("/jwt", async (req, res) => {
@@ -203,6 +247,18 @@ async function run() {
       res.send(plant);
     });
 
+    // update a user role and status
+    app.patch("/orders/:id", verifyToken, verifySeller, async (req, res) => {
+      const id = req.params.id;
+      const { status } = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: { status },
+      };
+      const result = await orderCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
     // get all orders of a specific seller
     app.get(
       "/seller-orders/:email",
@@ -252,6 +308,19 @@ async function run() {
       const order = req.body;
       const result = await orderCollection.insertOne(order);
       res.send(result);
+      // Send Email
+      if (result?.insertedId) {
+        // to customer
+        sendEmail(order?.customer?.email, {
+          subject: "Order Successful",
+          message: `You've placed an order successfully. Transaction ID: ${result?.insertedId}`,
+        });
+        // to seller
+        sendEmail(order?.seller, {
+          subject: "Hurrah! You have an order to process",
+          message: `Get the plants ready for ${order?.customer?.name}`,
+        });
+      }
     });
 
     // manage plants quantity after purchase

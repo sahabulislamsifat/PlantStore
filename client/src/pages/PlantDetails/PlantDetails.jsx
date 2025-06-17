@@ -8,8 +8,13 @@ import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import LoadingSpinner from "../../components/Shared/LoadingSpinner";
 import axios from "axios";
+import useAuth from "../../hooks/useAuth";
+import useRole from "../../hooks/useRole";
 
 const PlantDetails = () => {
+  const { user } = useAuth();
+  const { role } = useRole();
+
   const { id } = useParams(); // Assuming you have a way to get the plant
   // console.log(id);
   let [isOpen, setIsOpen] = useState(false);
@@ -104,6 +109,12 @@ const PlantDetails = () => {
             <p className="font-bold text-3xl text-gray-500">Price: ${price}</p>
             <div>
               <Button
+                disabled={
+                  !user ||
+                  user?.email === seller?.email ||
+                  role != "Customer" ||
+                  quantity === 0
+                }
                 onClick={() => setIsOpen(true)}
                 label={quantity > 0 ? "Purchase" : "Out of Stock"}
               />
